@@ -43,57 +43,110 @@ def dispatch_request(request):
 def create_task(request):
     """Create a new annotation task"""
 
-    db_task = None
-    params = request.POST.dict()
-    params['owner'] = request.user
-    global_logger.info("create task with params = {}".format(params))
-    try:
-        db_task = task.create_empty(params)
-        target_paths = []
-        source_paths = []
-        upload_dir = db_task.get_upload_dirname()
-        share_root = settings.SHARE_ROOT
-        if params['storage'] == 'share':
-            data_list = request.POST.getlist('data')
-            data_list.sort(key=len)
-            for share_path in data_list:
-                relpath = os.path.normpath(share_path).lstrip('/')
-                if '..' in relpath.split(os.path.sep):
-                    raise Exception('Permission denied')
-                abspath = os.path.abspath(os.path.join(share_root, relpath))
-                if os.path.commonprefix([share_root, abspath]) != share_root:
-                    raise Exception('Bad file path on share: ' + abspath)
-                source_paths.append(abspath)
-                target_paths.append(os.path.join(upload_dir, relpath))
-        else:
-            data_list = request.FILES.getlist('data')
+    # Dominic: hacking this temporarily, so we can create one task
+    # per a (long) list of input videos.
 
-            if len(data_list) > settings.LOCAL_LOAD_MAX_FILES_COUNT:
-                raise Exception('Too many files. Please use download via share')
+    params = request.POST.dict()
+    #import wdb; wdb.set_trace()
+    data_list = request.FILES.getlist('data')
+    #for dl in request.FILES.getlist('data'):
+
+    for v,video in enumerate(data_list):
+        db_task = None
+        new_params = params
+
+        # Another hack. Input new annotator's name
+        # as task name, and instead make the test name
+        # the name of the uploaded video.
+        #new_params[''SOURCE_PATHS'] = video_path
+
+        new_params['owner'] = request.user #new_params['task_name']
+        new_params['annotator'] = new_params['task_name']
+
+        global_logger.info("create task with params = {}".format(new_params))
+        try:
+            db_task = task.create_empty(new_params)
+            target_paths = []
+            source_paths = []
+            upload_dir = db_task.get_upload_dirname()
+            share_root = settings.SHARE_ROOT
+
+            #data_list = request.FILES.getlist('data')[v]
+
+            #if len(data_list) > settings.LOCAL_LOAD_MAX_FILES_COUNT:
+            #    raise Exception('Too many files. Please use download via share')
             common_size = 0
-            for f in data_list:
-                common_size += f.size
+            #for f in data_list:
+            common_size += video.size
             if common_size > settings.LOCAL_LOAD_MAX_FILES_SIZE:
                 raise Exception('Too many size. Please use download via share')
 
-            for data_file in data_list:
-                source_paths.append(data_file.name)
-                path = os.path.join(upload_dir, data_file.name)
-                target_paths.append(path)
-                with open(path, 'wb') as upload_file:
-                    for chunk in data_file.chunks():
-                        upload_file.write(chunk)
+            #for data_file in data_list:
+            source_paths.append(video.name)
+            path = os.path.join(upload_dir, video.name)
+            target_paths.append(path)
+            with open(path, 'wb') as upload_file:
+                for chunk in video.chunks():
+                    upload_file.write(chunk)
 
-        params['SOURCE_PATHS'] = source_paths
-        params['TARGET_PATHS'] = target_paths
+            params['SOURCE_PATHS'] = source_paths
+            params['TARGET_PATHS'] = target_paths
 
-        task.create(db_task.id, params)
+            task.create(db_task.id, new_params)
 
-        return JsonResponse({'tid': db_task.id})
-    except Exception as exc:
-        global_logger.error("cannot create task {}".format(params['task_name']), exc_info=True)
-        db_task.delete()
-        return HttpResponseBadRequest(str(exc))
+            '''
+            db_task = None
+            params = request.POST.dict()
+            params['owner'] = request.user
+            global_logger.info("create task with params = {}".format(params))
+            try:
+                db_task = task.create_empty(params)
+                target_paths = []
+                source_paths = []
+                upload_dir = db_task.get_upload_dirname()
+                share_root = settings.SHARE_ROOT
+                if params['storage'] == 'share':
+                    data_list = request.POST.getlist('data')
+                    data_list.sort(key=len)
+                    for share_path in data_list:
+                        relpath = os.path.normpath(share_path).lstrip('/')
+                        if '..' in relpath.split(os.path.sep):
+                            raise Exception('Permission denied')
+                        abspath = os.path.abspath(os.path.join(share_root, relpath))
+                        if os.path.commonprefix([share_root, abspath]) != share_root:
+                            raise Exception('Bad file path on share: ' + abspath)
+                        source_paths.append(abspath)
+                        target_paths.append(os.path.join(upload_dir, relpath))
+                else:
+                    data_list = request.FILES.getlist('data')
+        
+                    if len(data_list) > settings.LOCAL_LOAD_MAX_FILES_COUNT:
+                        raise Exception('Too many files. Please use download via share')
+                    common_size = 0
+                    for f in data_list:
+                        common_size += f.size
+                    if common_size > settings.LOCAL_LOAD_MAX_FILES_SIZE:
+                        raise Exception('Too many size. Please use download via share')
+        
+                    for data_file in data_list:
+                        source_paths.append(data_file.name)
+                        path = os.path.join(upload_dir, data_file.name)
+                        target_paths.append(path)
+                        with open(path, 'wb') as upload_file:
+                            for chunk in data_file.chunks():
+                                upload_file.write(chunk)
+        
+                params['SOURCE_PATHS'] = source_paths
+                params['TARGET_PATHS'] = target_paths
+        
+                task.create(db_task.id, params)
+        
+                return JsonResponse({'tid': db_task.id})
+            '''
+        except Exception as exc:
+            global_logger.error("cannot create task {}".format(params['task_name']), exc_info=True)
+            db_task.delete()
+            return HttpResponseBadRequest(str(exc))
 
     return JsonResponse({'tid': db_task.id})
 

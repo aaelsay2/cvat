@@ -39,16 +39,21 @@ def update_ldap_groups(sender, user=None, ldap_user=None, **kwargs):
             if ldap_group.lower() in ldap_user.group_dns:
                 user_groups.append(group_instance)
 
-    user.save()
     user.groups.set(user_groups)
     user.is_staff = user.is_superuser = user.groups.filter(name='admin').exists()
 
 def create_user(sender, instance, created, **kwargs):
+
     if instance.is_superuser and instance.is_staff:
         admin_group, _ = Group.objects.get_or_create(name='admin')
         admin_group.user_set.add(instance)
 
     if created:
+
+        # Hack because we call user.save() twice overall. But oh well.
+        instance.is_staff = True
+        instance.save()
+
         for cvat_role, _ in authentication.cvat_groups_definition.items():
             group_instance, _ = Group.objects.get_or_create(name=cvat_role)
             setup_group_permissions(group_instance)

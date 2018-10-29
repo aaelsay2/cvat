@@ -408,8 +408,8 @@ class PlayerController {
 
             Mousetrap.bind(shortkeys["next_frame"].value, nextHandler, 'keydown');
             Mousetrap.bind(shortkeys["prev_frame"].value, prevHandler, 'keydown');
-            Mousetrap.bind(shortkeys["next_filter_frame"].value, nextFilterFrameHandler, 'keydown');
-            Mousetrap.bind(shortkeys["prev_filter_frame"].value, prevFilterFrameHandler, 'keydown');
+            //Mousetrap.bind(shortkeys["next_filter_frame"].value, nextFilterFrameHandler, 'keydown');
+            //Mousetrap.bind(shortkeys["prev_filter_frame"].value, prevFilterFrameHandler, 'keydown');
             Mousetrap.bind(shortkeys["next_key_frame"].value, nextKeyFrameHandler, 'keydown');
             Mousetrap.bind(shortkeys["prev_key_frame"].value, prevKeyFrameHandler, 'keydown');
             Mousetrap.bind(shortkeys["forward_frame"].value, forwardHandler, 'keydown');

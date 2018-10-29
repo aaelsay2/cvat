@@ -147,7 +147,7 @@ function buildAnnotationUI(job, trackData, loadJobEvent) {
     $('#mergeTracksButton').attr('title',
         `${shortkeys["switch_merge_mode"].view_value} - ${shortkeys["switch_merge_mode"].description}` + "\n" +
         `${shortkeys["cancel_merge_mode"].view_value} - ${shortkeys["cancel_merge_mode"].description}`); */
-    $('#saveButton').attr('title', `${shortkeys["save_work"].view_value}`);
+    $('#saveButton').attr('title', 'Save Work'); //`${shortkeys["save_work"].view_value}`
     $('#helpButton').attr('title', `${shortkeys["open_help"].view_value}`);
     $('#settingsButton').attr('title', `${shortkeys["open_settings"].view_value}`);
 
@@ -169,6 +169,7 @@ function setupFrameFilters() {
     let saturation = 100;
 
     let shortkeys = userConfig.shortkeys;
+    /*
     Mousetrap.bind(shortkeys["change_player_brightness"].value.split(','), (e) => {
         if (e.shiftKey) brightnessRange.prop('value', brightness + 10).trigger('input');
         else brightnessRange.prop('value', brightness - 10).trigger('input');
@@ -182,7 +183,7 @@ function setupFrameFilters() {
     Mousetrap.bind(shortkeys["change_player_saturation"].value.split(','), (e) => {
         if (e.shiftKey) saturationRange.prop('value', saturation + 10).trigger('input');
         else saturationRange.prop('value', saturation - 10).trigger('input');
-    }, 'keydown');
+    }, 'keydown');*/
 
     reset.on('click', function () {
         brightness = 100;

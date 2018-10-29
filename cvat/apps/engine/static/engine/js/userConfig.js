@@ -70,13 +70,13 @@ class Config {
                 description: "switch play / pause of player"
             },
 
+            /*
+
             save_work: {
-                value: "ctrl+s",
-                view_value: "Ctrl + S",
+                value: "tab+s",//"ctrl+s",
+                view_value: "Tab + S",//"Ctrl + S",
                 description: "save work on the server"
             },
-
-            /*
 
             switch_merge_mode: {
                 value: "m",
@@ -106,7 +106,7 @@ class Config {
                 value: "enter",
                 view_value: "Enter",
                 description: "change color for highligted shape"
-            }, */
+            },
 
             change_player_brightness: {
                 value: "shift+b,alt+b",
@@ -126,7 +126,7 @@ class Config {
                 description: "increase/decrease saturation of an image"
             },
 
-            /*
+
 
             hide_shapes: {
                 value: "h",
@@ -152,13 +152,13 @@ class Config {
                 description: "focus to 'go to frame' element"
             },
 
-            */
+
 
             delete_track: {
                 value: "del,shift+del",
                 view_value: "Del, Shift + Del",
                 description: "delete highlighted track (use shift for force deleting)"
-            },
+            }, */
 
             next_key_frame: {
                 value: "r",
@@ -172,6 +172,8 @@ class Config {
                 description: "move to previous key frame of highlighted track"
             },
 
+            /*
+
             prev_filter_frame: {
                 value: 'left',
                 view_value: 'Left Arrow',
@@ -183,7 +185,7 @@ class Config {
                 view_value: 'Right Arrow',
                 description: 'move to next frame which satisfies the filter'
             },
-
+            */
 
 
             open_help: {

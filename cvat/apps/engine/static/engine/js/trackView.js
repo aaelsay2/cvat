@@ -667,7 +667,7 @@ class TrackView {
         let ui = $('<div></div>').css('background-color', colors.background).addClass('uiElement regular');
         $(`<label> Worker ${id} </label>`).addClass('semiBold').appendTo(ui);
         let button = $('<a></a>').addClass('close').appendTo(ui);
-        button.attr('title', `Delete Object (${shortkeys["delete_track"].view_value})`);
+        button.attr('title', `Delete Object`); //(${shortkeys["delete_track"].view_value})
 
         // TODO: implement remove functionality.
 

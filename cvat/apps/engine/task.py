@@ -39,7 +39,7 @@ def create_empty(params):
     db_task.bug_tracker = params['bug_tracker_link']
     db_task.path = ""
     db_task.size = 0
-    db_task.owner = params['owner']
+    db_task.owner = params['owner']#models.User.objects.get(username=params['owner'])
     db_task.save()
     task_path = os.path.join(settings.DATA_ROOT, str(db_task.id))
     db_task.set_task_dirname(task_path)
@@ -320,7 +320,7 @@ def _parse_db_labels(db_labels):
 @transaction.atomic
 def _create_thread(tid, params):
     # TODO: Improve a function logic. Need filter paths from a share storage before their copy to the server
-    db_task = db_task = models.Task.objects.select_for_update().get(pk=tid)
+    db_task = models.Task.objects.select_for_update().get(pk=tid)
 
     upload_dir = db_task.get_upload_dirname()
     output_dir = db_task.get_data_dirname()
@@ -372,6 +372,9 @@ def _create_thread(tid, params):
                 if not os.path.exists(dirname):
                     os.makedirs(dirname)
                 shutil.copyfile(image_orig_path, image_dest_path)
+
+
+        '''
         else:
             extensions = ['.jpg', '.png', '.bmp', '.jpeg']
             filenames = []
@@ -408,6 +411,7 @@ def _create_thread(tid, params):
                     os.makedirs(dirname)
                 os.symlink(image_orig_path, image_dest_path)
             log_file.write("Formatted {0} images\n".format(len(filenames)))
+        '''
 
         default_segment_length = sys.maxsize    # greather then any task size. Default split by segments disabled.
         segment_length = int(params.get('segment_size', default_segment_length))
@@ -435,6 +439,7 @@ def _create_thread(tid, params):
 
             db_job = models.Job()
             db_job.segment = db_segment
+            db_job.annotator = models.User.objects.get(username=params['annotator'])
             db_job.save()
 
         labels = params['labels']

@@ -96,10 +96,10 @@ class Job(models.Model):
     get_id.admin_order_field = 'id'
 
     def get_deltatime(self):
-        if timezone.now() - self.updated_date < timezone.timedelta(minutes=2):
-            return 'False'
-        else:
-            return 'True'
+        #if timezone.now() - self.updated_date < timezone.timedelta(minutes=2):
+        #    return 'False'
+        #else:
+        return 'True'
 
 
     # TODO: add sub-issue number for the task

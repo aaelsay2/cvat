@@ -88,6 +88,23 @@ def delete(tid):
     else:
         raise Exception("The task doesn't exist")
 
+
+@transaction.atomic
+def reverse_annotation(tid):
+    """ Reverse annotations"""
+    job_id = models.Job.objects.select_for_update().get(segment_id=
+             models.Segment.objects.select_for_update().get(task_id=tid).id).id
+
+    db_skels = models.TrackedSkeleton.objects.select_for_update().filter(track_id =
+                models.ObjectPath.objects.select_for_update().get(job_id=job_id).id).order_by('id')
+
+    frames = [skel.frame for skel in db_skels]
+
+    for i in range(len(frames)):
+        db_skels[i].frame = frames[len(frames) - 1 -i]
+        db_skels[i].save()
+
+
 @transaction.atomic
 def update(tid, labels):
     """Update labels for the task"""

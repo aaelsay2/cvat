@@ -297,8 +297,6 @@ def get_annotation(request, jid):
 @permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
 def save_annotation_for_job(request, jid):
 
-
-
     try:
 
         job_logger[jid].info("save annotation for {} job".format(jid))
@@ -333,6 +331,18 @@ def save_annotation_for_task(request, tid):
     return HttpResponse()
 
 @login_required
+@permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
+def reverse_task(request,tid):
+    try:
+        task_logger[tid].info("reverse_annotations request")
+        task.reverse_annotation(tid)
+    except Exception as e:
+        task_logger[tid].error("cannot reverse annotation", exc_info=True)
+        return HttpResponseBadRequest(str(e))
+
+    return HttpResponse()
+
+@login_required
 def get_username(request):
 
     response = {'username': request.user.username}
@@ -348,3 +358,4 @@ def rq_handler(job, exc_type, exc_value, tb):
         return annotation.rq_handler(job, exc_type, exc_value, tb)
 
     return True
+

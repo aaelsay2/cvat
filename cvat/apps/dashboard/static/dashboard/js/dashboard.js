@@ -16,6 +16,7 @@ window.cvat.dashboard.uiCallbacks.push(function(elements) {
         let uploadButton = $( $(buttonsUI).find('button.dashboardUploadAnnotation')[0] );
         let updateButton = $( $(buttonsUI).find('button.dashboardUpdateTask')[0] );
         let deleteButton = $( $(buttonsUI).find('button.dashboardDeleteTask')[0] );
+        let reverseButton = $( $(buttonsUI).find('button.dashboardReverse')[0] );
 
         let bugTrackerButton =  $(buttonsUI).find('.dashboardOpenTrackerButton');
         if (bugTrackerButton.length) {
@@ -49,6 +50,14 @@ window.cvat.dashboard.uiCallbacks.push(function(elements) {
             window.cvat.dashboard.taskName = taskName;
             RemoveTaskRequest();
         });
+
+        reverseButton.on('click', function() {
+            window.cvat.dashboard.taskID = taskID;
+            window.cvat.dashboard.taskName = taskName;
+            reverseAnnotations();
+        });
+
+
     });
 });
 
@@ -487,6 +496,22 @@ function RemoveTaskRequest() {
             }
         });
     }
+}
+
+function reverseAnnotations() {
+
+    $.ajax({
+            url: '/reverse/task/' + window.cvat.dashboard.taskID,
+            success: function(data) {
+                let message = 'Reverse successful!';
+                showMessage(message);
+            },
+            error: function(response) {
+                let message = 'Reverse failed :( :' + response.responseText;
+                throw Error(message);
+            }
+        });
+
 }
 
 

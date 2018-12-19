@@ -16,5 +16,5 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cvat.settings.{}" \
 
 application = get_wsgi_application()
 
-from wdb.ext import WdbMiddleware
-application = WdbMiddleware(application)
+#from wdb.ext import WdbMiddleware
+#application = WdbMiddleware(application)

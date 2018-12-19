@@ -23,12 +23,12 @@ services:
     image: cvat
     restart: always
     depends_on:
-      - cvat_redis
-      - cvat_db
+    - cvat_redis
+    - cvat_db
     ports:
-      - "8080:80" #"8080:8080"
+      - "8080:8080" #"8080:8080"
     links:
-#      - wdb
+      - wdb
       - cvat_db
     build:
       context: .
@@ -44,18 +44,18 @@ services:
       DJANGO_MODWSGI_EXTRA_ARGS: ""
       DJANGO_LOG_SERVER_URL: ""
       ALLOWED_HOSTS: http://visualconstruction.cee.illinois.edu/
-#      WDB_SOCKET_SERVER: wdb
-#      WDB_NO_BROWSER_AUTO_OPEN: "True"
+      WDB_SOCKET_SERVER: wdb
+      WDB_NO_BROWSER_AUTO_OPEN: "True"
 
     volumes:
-      - cvat_data:/home/django/data
-      - cvat_keys:/home/django/keys
-      - cvat_logs:/home/django/logs
-      - ./share:/home/django/share
-#  wdb:
-#    image: kozea/wdb
-#    ports:
-#        - "1984:1984"
+    - cvat_data:/home/django/data
+    - cvat_keys:/home/django/keys
+    - cvat_logs:/home/django/logs
+    - ./share:/home/django/share
+  wdb:
+    image: kozea/wdb
+    ports:
+        - "1984:1984"
 
 volumes:
   cvat_db:

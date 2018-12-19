@@ -1432,8 +1432,6 @@ class _AnnotationForTask(_Annotation):
 
                     # Extremely hacky way of generating unique image id:
                     # taskid + 000 + frameid. Hopefully no issues with this.
-                    # Replacing frame_path as not really needed given we are testing on
-                    # other data
 
                     image = {'license' : 3,
                               'file_name' : str(db_job_id) + '000' + str(db_skel.frame),
@@ -1446,7 +1444,6 @@ class _AnnotationForTask(_Annotation):
 
                     if image not in annotationjson['images']:
                         annotationjson['images'].append(image)
-
 
                     # Get keypoint locations for current (key) frame
                     db_keypoints = models.Keypoint.objects.select_for_update().filter(skeleton_id=db_skel.id)
@@ -1467,17 +1464,16 @@ class _AnnotationForTask(_Annotation):
                         annotations['keypoints'].append(keypoint.y)
                         annotations['keypoints'].append(keypoint.visibility)
 
-
-
-            annotationjson['annotations'].append(annotations)
-
-
+                    annotationjson['annotations'].append(annotations)
 
             # TODO: need to also generate interpolated keypoint positions.
 
             nm = list(satisfactories[satisfactories['cvatjobid'] == db_job.id]['videoname'])[0]
 
             json.dump(annotationjson,open('{}.json'.format(nm),'w'))
+
+        jsons = [f for f in os.listdir('.') if '.json' in f]
+
 
         #dump_path = self.db_task.get_dump_path()
 

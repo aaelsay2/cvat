@@ -18,6 +18,9 @@ import pdb
 from . import models
 from .task import get_frame_path
 from .logging import task_logger, job_logger
+import json
+
+import pandas as pd
 
 ############################# Low Level server API
 
@@ -779,9 +782,6 @@ class _AnnotationForJob(_Annotation):
         # Will be a list of lists containing each skel's keypoints
         db_skel_keypoints = []
 
-
-
-
         for path in self.paths:
             db_path = models.ObjectPath()
             db_path.job = self.db_job
@@ -891,8 +891,6 @@ class _AnnotationForJob(_Annotation):
 
                 #
                 db_keyp.skeleton_id = saved_skels[db_keyp.skeleton_id].id
-
-
 
             models.Keypoint.objects.bulk_create(db_skel_keypoints[db_skels.index(db_skel)])
 
@@ -1325,6 +1323,10 @@ class _AnnotationForTask(_Annotation):
         db_segments = db_task.segment_set.all().prefetch_related('job_set')
         db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
 
+
+        # Note: This code modified to output (JSON) keypoint annotations in
+        # Microsoft COCO format. (c.f. http://cocodataset.org/#format-data )
+        '''
         meta = OrderedDict([
             ("task", OrderedDict([
                 ("id", str(db_task.id)),
@@ -1361,10 +1363,126 @@ class _AnnotationForTask(_Annotation):
             ])),
             ("dumped", str(timezone.localtime(timezone.now())))
         ])
+        '''
+        annotationjson = {}
+        # Placeholders
+        annotationjson['info'] = {u'description': u'COCO 2017 Dataset',
+                                  u'url': u'http://cocodataset.org',
+                                  u'version': u'1.0', u'year': 2017,
+                                  u'contributor': u'COCO Consortium',
+                                  u'date_created': u'2017/09/01'}
+        annotationjson['licenses'] = [{u'url': u'http://creativecommons.org/licenses/by-nc-sa/2.0/',
+                                       u'id': 1,
+                                       u'name': u'Attribution-NonCommercial-ShareAlike License'},
+                                      {u'url': u'http://creativecommons.org/licenses/by-nc/2.0/',
+                                       u'id': 2, u'name': u'Attribution-NonCommercial License'},
+                                      {u'url': u'http://creativecommons.org/licenses/by-nc-nd/2.0/',
+                                       u'id': 3, u'name': u'Attribution-NonCommercial-NoDerivs License'},
+                                      {u'url': u'http://creativecommons.org/licenses/by/2.0/',
+                                       u'id': 4, u'name': u'Attribution License'},
+                                      {u'url': u'http://creativecommons.org/licenses/by-sa/2.0/',
+                                       u'id': 5, u'name': u'Attribution-ShareAlike License'},
+                                      {u'url': u'http://creativecommons.org/licenses/by-nd/2.0/',
+                                       u'id': 6, u'name': u'Attribution-NoDerivs License'},
+                                      {u'url': u'http://flickr.com/commons/usage/',
+                                       u'id': 7, u'name': u'No known copyright restrictions'},
+                                      {u'url': u'http://www.usa.gov/copyright.shtml',
+                                       u'id': 8, u'name': u'United States Government Work'}]
+
+        # Will be filled in via parsing db annotations
+        annotationjson['images'] = []
+        annotationjson['annotations'] = []
+
+        # keypoints we annotated. Correspond to COCO indexes 0 and 2-13 (so 13 in total)
+        keypointsnames = ["nose", "left shoulder", "right shoulder", "left elbow", "right elbow",
+                     "left wrist", "right wrist", "left hip", "right hip", "left knee",
+                     "right knee", "left ankle", "right ankle", "center"]
+
+        #All of our jobs should just have one segment.
+        # = models.Job.objects.select_for_update().get(segment_id=db_segments[0].id).id
+
+        #
+        satisfactories = pd.read_csv('satisfactory_vids.csv')
+        satisfactories = satisfactories[satisfactories['status'] == '2']
+
+        db_jobs = models.Job.objects.select_for_update().filter(id__in=list(satisfactories['cvatjobid']))
+
+        #db_jobs = models.Job.objects.select_for_update().all()
+
+        for db_job in db_jobs:
+
+            db_job_id = db_job.id
+
+            # object_paths are individual tracks belonging to a job.
+            object_paths = models.ObjectPath.objects.select_for_update().filter(job_id=db_job_id)
+
+            for object_path in object_paths:
+
+                # resulting TrackedSkeletons are skeletons of individual frames belonging to
+                # object_path-identified track.
+                db_skels = models.TrackedSkeleton.objects.select_for_update().filter(track_id=
+                             object_path.id).order_by('frame')
+
+                def keyporder(elem):
+                    return keypointsnames.index(elem.name)
+
+                current_frame = 0
+                current_kf = {}
+                for db_skel in db_skels:
+
+                    # Extremely hacky way of generating unique image id:
+                    # taskid + 000 + frameid. Hopefully no issues with this.
+                    # Replacing frame_path as not really needed given we are testing on
+                    # other data
+
+                    image = {'license' : 3,
+                              'file_name' : str(db_job_id) + '000' + str(db_skel.frame),
+                              'coco_url' : '',
+                              'height' : 0,
+                              'width' : 0,
+                              'date_captured' : '',
+                              'flickr_url' : '',
+                              'id' : int(str(db_job_id) + '000' + str(db_skel.frame))}
+
+                    if image not in annotationjson['images']:
+                        annotationjson['images'].append(image)
 
 
-        dump_path = self.db_task.get_dump_path()
-        with open(dump_path, "w") as dump_file:
+                    # Get keypoint locations for current (key) frame
+                    db_keypoints = models.Keypoint.objects.select_for_update().filter(skeleton_id=db_skel.id)
+                    db_keypoints = sorted(db_keypoints,key=keyporder)
+
+                    annotations = {'segmentation': [[]],
+                                   'num_keypoints': 13,
+                                   'area': 0,
+                                   'iscrowd': 0,
+                                   'keypoints': [], # Should be of length 39 when created
+                                   'image_id': image['id'],
+                                   'bbox': [],
+                                   'category_id' : 1,
+                                   'id': db_skel.skeleton_ptr.id}
+
+                    for keypoint in db_keypoints:
+                        annotations['keypoints'].append(keypoint.x)
+                        annotations['keypoints'].append(keypoint.y)
+                        annotations['keypoints'].append(keypoint.visibility)
+
+
+
+            annotationjson['annotations'].append(annotations)
+
+
+
+            # TODO: need to also generate interpolated keypoint positions.
+
+            nm = list(satisfactories[satisfactories['cvatjobid'] == db_job.id]['videoname'])[0]
+
+            json.dump(annotationjson,open('{}.json'.format(nm),'w'))
+
+        #dump_path = self.db_task.get_dump_path()
+
+        '''
+        #with open(dump_path, "w") as dump_file:
             dumper = _XmlAnnotationWriter(dump_file)
             dumper.open_root()
             dumper.add_meta(meta)
@@ -1431,3 +1549,4 @@ class _AnnotationForTask(_Annotation):
                     dumper.close_track()
 
             dumper.close_root()
+        '''

@@ -1468,12 +1468,9 @@ class _AnnotationForTask(_Annotation):
 
             # TODO: need to also generate interpolated keypoint positions.
 
-            nm = list(satisfactories[satisfactories['cvatjobid'] == db_job.id]['videoname'])[0]
+            #nm = list(satisfactories[satisfactories['cvatjobid'] == db_job.id]['videoname'])[0]
 
-            json.dump(annotationjson,open('{}.json'.format(nm),'w'))
-
-        jsons = [f for f in os.listdir('.') if '.json' in f]
-
+        json.dump(annotationjson,open('annotations.json','w'))
 
         #dump_path = self.db_task.get_dump_path()
 

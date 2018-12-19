@@ -61,4 +61,4 @@ volumes:
   cvat_db:
   cvat_data:
   cvat_keys:
-cvat_logs:
+  cvat_logs:

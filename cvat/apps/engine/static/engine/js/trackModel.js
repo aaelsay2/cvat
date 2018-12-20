@@ -910,9 +910,13 @@ class Skeleton {
 
     export() {
         let serialized = {};
+        
+        console.log(this._positionJournal);
+        
         for (let frame in this._positionJournal) {
             let pos = this._positionJournal[frame];
-
+            
+           
             var tmp = {
                 'skels' : [],
                 'activity' : 'test_modif'

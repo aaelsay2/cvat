@@ -198,6 +198,7 @@ class CollectionModel extends Listener {
                 }
             }
 
+            console.log(skeletons);
 
             /*
             let boxes = [];

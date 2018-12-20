@@ -234,6 +234,8 @@ class CollectionModel extends Listener {
     }
 
     exportTracks() {
+        
+        console.log(this._allTracks);
 
         let response = {"boxes": [], "tracks": []};
         for (let i = 0; i < this._allTracks.length; i ++ ) {

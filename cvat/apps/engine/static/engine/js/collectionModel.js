@@ -182,6 +182,9 @@ class CollectionModel extends Listener {
             }
 
             let skeletons = [];
+            
+            console.log(track.skeletons);
+            
             for (let skel of track.skeletons) {
                 var keypoints = [];
 

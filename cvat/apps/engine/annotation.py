@@ -532,7 +532,7 @@ class _AnnotationForJob(_Annotation):
                                 'trackedskeleton__keypoint__x',
                                 'trackedskeleton__keypoint__y',
                                 'trackedskeleton__keypoint__name')
-            .order_by('id', 'trackedskeleton__frame'))
+            .order_by('trackedskeleton__frame','id'))
 
         keys_for_merge = {
             'attributes': [

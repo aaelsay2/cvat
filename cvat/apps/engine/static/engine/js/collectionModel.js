@@ -228,7 +228,7 @@ class CollectionModel extends Listener {
 
         for (let i = 0; i < tracks.length; i ++) {
                 if (!tracks[i].skels.length) continue;    // Remove saved wrong tracks with empty path
-                this.push(tracks[i]);
+                this.add(tracks[i]);
             }
     }
 
@@ -307,8 +307,8 @@ class CollectionModel extends Listener {
         }
         let skels = [];
         let current = [skel,this._curFrame,0,0];
-        skels.push(current);
-
+        //skels.push(current);
+        skels.add(current);
         this.add({
             attributes: [],
             skels: skels,

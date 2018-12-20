@@ -554,7 +554,7 @@ class _AnnotationForJob(_Annotation):
         }
 
         # Grouping them here by TRACK id (I believe)
-        db_paths = self._merge_table_rows(db_paths, keys_for_merge, 'trackedskeleton__frame')
+        db_paths = self._merge_table_rows(db_paths, keys_for_merge, 'id')
 
 
         keys_for_merge = {

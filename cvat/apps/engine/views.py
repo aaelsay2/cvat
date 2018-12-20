@@ -286,6 +286,11 @@ def get_annotation(request, jid):
     try:
         job_logger[jid].info("get annotation for {} job".format(jid))
         response = annotation.get(jid)
+        
+        
+        for i,track in enumerate(response['tracks']):
+            skeletons = sorted(track['skeletons'],key=lambda v:v['frame'])
+            response['tracks'][i]['skeletons'] = skeletons
 
     except Exception as e:
         job_logger[jid].error("cannot get annotation for job {}".format(jid), exc_info=True)

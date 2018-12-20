@@ -307,8 +307,8 @@ class CollectionModel extends Listener {
         }
         let skels = [];
         let current = [skel,this._curFrame,0,0];
-        //skels.push(current);
-        skels.add(current);
+        skels.push(current);
+
         this.add({
             attributes: [],
             skels: skels,

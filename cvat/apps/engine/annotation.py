@@ -532,7 +532,7 @@ class _AnnotationForJob(_Annotation):
                                 'trackedskeleton__keypoint__x',
                                 'trackedskeleton__keypoint__y',
                                 'trackedskeleton__keypoint__name')
-            .order_by('trackedskeleton__frame','id'))
+            .order_by('id','trackedskeleton__frame'))
 
         keys_for_merge = {
             'attributes': [
@@ -885,15 +885,15 @@ class _AnnotationForJob(_Annotation):
         saved_skels = list(models.TrackedSkeleton.objects.filter(track__job_id=self.db_job.id))
 
         # skeletons we added in this transaction
-        for db_skel in db_skels:
+        for i,db_skel in enumerate(db_skels):
             # sets of keypoints added in this transaction
-            for db_keyp in db_skel_keypoints[db_skels.index(db_skel)]:
-
-                #
+            #for db_keyp in db_skel_keypoints[db_skels.index(db_skel)]:
+            for db_keyp in db_skel_keypoints[i]:
+                
                 db_keyp.skeleton_id = saved_skels[db_keyp.skeleton_id].id
 
-            models.Keypoint.objects.bulk_create(db_skel_keypoints[db_skels.index(db_skel)])
-
+            #models.Keypoint.objects.bulk_create(db_skel_keypoints[db_skels.index(db_skel)])
+            models.Keypoint.objects.bulk_create(db_skel_keypoints[i])
 
                 #new_db_skels.append(models.TrackedSkeleton.objects.save(db_skel))
         #db_skels = models.TrackedSkeleton.objects.bulk_create(db_skels)

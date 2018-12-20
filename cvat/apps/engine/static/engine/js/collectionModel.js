@@ -192,7 +192,7 @@ class CollectionModel extends Listener {
 
                 }
 
-                skeletons.add([keypoints,skel.frame,skel.outside,0, skel.activity]);
+                skeletons.push([keypoints,skel.frame,skel.outside,0, skel.activity]);
                 for (let attr of skel.attributes) {
                     attributes.push([attr.id, skel.frame, attr.value]);
                 }

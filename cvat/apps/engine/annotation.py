@@ -68,6 +68,8 @@ def get(jid):
     annotation = _AnnotationForJob(db_job)
     annotation.init_from_db()
 
+    #import wdb; wdb.set_trace()
+
 
     return annotation.to_client()
 
@@ -80,9 +82,6 @@ def save_job(jid, data):
     annotation = _AnnotationForJob(db_job)
     annotation.init_from_client(data)
 
-
-    #annotation.save_skels_to_db()
-    #annotation.save_boxes_to_db()
     annotation.save_paths_to_db()
     db_job.segment.task.updated_date = timezone.now()
     db_job.updated_date = timezone.now()
@@ -518,7 +517,8 @@ class _AnnotationForJob(_Annotation):
         db_paths = list(self.db_job.objectpath_set.prefetch_related('trackedskeleton_set')
                        .prefetch_related('objectpathattributeval_set')
                        .prefetch_related('trackedskeleton_set__trackedskeletonattributeval_set')
-                        .values('id', 'frame', 'objectpathattributeval__spec_id',
+                        .values('id', 'frame',
+                'objectpathattributeval__spec_id',
                 'objectpathattributeval__id', 'objectpathattributeval__value',
                 'trackedskeleton__id', 'label_id',
                 'trackedskeleton__frame',
@@ -535,11 +535,20 @@ class _AnnotationForJob(_Annotation):
             .order_by('id','trackedskeleton__frame'))
 
         keys_for_merge = {
+
+
+            # The value of all of these attributes is None in 1st frame.
+            # So resulting "attributes" list is empty.
+
             'attributes': [
                 'objectpathattributeval__value',
                 'objectpathattributeval__spec_id',
                 'objectpathattributeval__id'
             ],
+
+            # In this formulation, two rows are separated within
+            # 'skeletons' list if any one of these attributes is different.
+            # Thus skee
             'skeletons': [
                 'trackedskeleton__keypoint__id',
                 'trackedskeleton__frame',
@@ -553,9 +562,12 @@ class _AnnotationForJob(_Annotation):
             ]
         }
 
+        # This seems to load the same keypoints twice if the keyframe contains
+        # attribute values for 2 different attributes. Let's try
+        # hackily checking kp already exists once we load it.
+
         # Grouping them here by TRACK id (I believe)
         db_paths = self._merge_table_rows(db_paths, keys_for_merge, 'id')
-
 
         keys_for_merge = {
             'attributes': [
@@ -579,8 +591,6 @@ class _AnnotationForJob(_Annotation):
             for db_skel in db_path.skeletons:
                 db_skel.attributes = list(set(db_skel.attributes))
 
-
-
         for db_path in db_paths:
             label = _Label(self.db_labels[db_path.label_id])
             path = _ObjectPath(label, db_path.frame, self.stop_frame)
@@ -591,15 +601,20 @@ class _AnnotationForJob(_Annotation):
 
             frame = -1
 
-
             for db_skel in db_path.skeletons:
 
                 db_keyps = []
+
+                db_skel.keypoints = list(set(db_skel.keypoints))
 
                 for db_keyp in db_skel.keypoints:
 
                     keyp = _Keypoint(db_keyp.name, db_keyp.x,db_keyp.y,
                                      db_skel.frame, db_keyp.visibility)
+
+                    # This seems to load the same keypoints twice if the keyframe contains
+                    # attribute values for 2 different attributes. Let's try
+                    # hackily checking kp already exists in db_keyps.
 
                     db_keyps.append(keyp)
 
@@ -621,16 +636,7 @@ class _AnnotationForJob(_Annotation):
 
                 path.add_skeleton(skel)
 
-
-            # Given we are only saving skeletons belonging to one frame
-            # and that it is difficult to design database queries without
-            # existing examples of skeletons across multiple frames,
-            # the preceding logic will only choose one out of the several
-            # skeletons in the same frame. This will be fixed once we
-            # can save skeleton tracks that cover multiple frames.
-
             self.paths.append(path)
-
 
     def init_from_client(self, data):
         # All fields inside data should be converted to correct type explicitly.

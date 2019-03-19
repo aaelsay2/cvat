@@ -354,6 +354,18 @@ def reverse_task(request,tid):
     return HttpResponse()
 
 @login_required
+@permission_required(perm=['engine.view_task', 'engine.change_annotation'], raise_exception=True)
+def flip_task(request,tid):
+    try:
+        task_logger[tid].info("reverse_annotations request")
+        task.flip_annotation(tid)
+    except Exception as e:
+        task_logger[tid].error("cannot reverse annotation", exc_info=True)
+        return HttpResponseBadRequest(str(e))
+
+    return HttpResponse()
+
+@login_required
 def get_username(request):
 
     response = {'username': request.user.username}

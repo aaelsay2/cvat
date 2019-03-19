@@ -108,6 +108,26 @@ def reverse_annotation(tid):
 
 
 @transaction.atomic
+def flip_annotation(tid):
+    """ Reverse annotations"""
+    job_id = models.Job.objects.select_for_update().get(segment_id=
+             models.Segment.objects.select_for_update().get(task_id=tid).id).id
+
+    db_object_paths = models.ObjectPath.objects.select_for_update().filter(job_id=job_id)
+
+    for op in db_object_paths:
+        db_skels = models.TrackedSkeleton.objects.select_for_update().filter(track_id = op.id).order_by('id')
+        for skel in db_skels:
+            keyps = models.Keypoint.objects.select_for_update().filter(skeleton_id = skel.id).order_by('id')
+            for keyp in keyps:
+                if keyp.name.split(' ')[0] == 'left':
+                    keyp.name = 'right ' + keyp.name.split(' ')[1]
+                elif keyp.name.split(' ')[0] == 'right':
+                    keyp.name = 'left ' + keyp.name.split(' ')[1]
+                keyp.save()
+
+
+@transaction.atomic
 def update(tid, labels):
     """Update labels for the task"""
 

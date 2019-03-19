@@ -17,7 +17,7 @@ window.cvat.dashboard.uiCallbacks.push(function(elements) {
         let updateButton = $( $(buttonsUI).find('button.dashboardUpdateTask')[0] );
         let deleteButton = $( $(buttonsUI).find('button.dashboardDeleteTask')[0] );
         let reverseButton = $( $(buttonsUI).find('button.dashboardReverse')[0] );
-
+        let flipButton = $( $(buttonsUI).find('button.dashboardFlip')[0] );
         let bugTrackerButton =  $(buttonsUI).find('.dashboardOpenTrackerButton');
         if (bugTrackerButton.length) {
             bugTrackerButton = $(bugTrackerButton[0]);
@@ -55,6 +55,12 @@ window.cvat.dashboard.uiCallbacks.push(function(elements) {
             window.cvat.dashboard.taskID = taskID;
             window.cvat.dashboard.taskName = taskName;
             reverseAnnotations();
+        });
+
+        flipButton.on('click', function() {
+            window.cvat.dashboard.taskID = taskID;
+            window.cvat.dashboard.taskName = taskName;
+            flipAnnotations();
         });
 
 
@@ -511,9 +517,23 @@ function reverseAnnotations() {
                 throw Error(message);
             }
         });
-
 }
 
+function flipAnnotations() {
+
+    $.ajax({
+            url: '/flip/task/' + window.cvat.dashboard.taskID,
+            success: function(data) {
+                let message = 'Flip successful!';
+                showMessage(message);
+            },
+            error: function(response) {
+                let message = 'Flip failed :( :' + response.responseText;
+                throw Error(message);
+            }
+        });
+
+}
 
 function uploadAnnotationRequest() {
     let input = $('<input>').attr({

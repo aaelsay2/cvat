@@ -17,5 +17,6 @@ urlpatterns = [
     path('save/annotation/task/<int:tid>', views.save_annotation_for_task),
     path('get/annotation/job/<int:jid>', views.get_annotation),
     path('get/username', views.get_username),
-    path('reverse/task/<int:tid>',views.reverse_task)
+    path('reverse/task/<int:tid>',views.reverse_task),
+    path('flip/task/<int:tid>',views.flip_task)
 ]

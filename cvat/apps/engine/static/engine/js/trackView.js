@@ -1453,7 +1453,7 @@ class TrackView {
 
         //TODO: find where this is declared
         //TODO: customized this for our purposes
-        //label.innerText = 'Type';//`${name.normalize()}`;
+        label.innerText = `${name.normalize()}`;
 
         let select = document.createElement('select');
         select.classList = 'regular';
@@ -1486,7 +1486,7 @@ class TrackView {
             e.preventDefault();
         };
 
-        //div.appendChild(label);
+        div.appendChild(label);
         div.appendChild(select);
         return $(div);
     }

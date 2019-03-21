@@ -68,9 +68,6 @@ def get(jid):
     annotation = _AnnotationForJob(db_job)
     annotation.init_from_db()
 
-    #import wdb; wdb.set_trace()
-
-
     return annotation.to_client()
 
 @transaction.atomic
@@ -1329,47 +1326,8 @@ class _AnnotationForTask(_Annotation):
         db_segments = db_task.segment_set.all().prefetch_related('job_set')
         db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
 
-
         # Note: This code modified to output (JSON) keypoint annotations in
         # Microsoft COCO format. (c.f. http://cocodataset.org/#format-data )
-        '''
-        meta = OrderedDict([
-            ("task", OrderedDict([
-                ("id", str(db_task.id)),
-                ("name", db_task.name),
-                ("size", str(db_task.size)),
-                ("mode", db_task.mode),
-                ("overlap", str(db_task.overlap)),
-                ("bugtracker", db_task.bug_tracker),
-                ("created", str(timezone.localtime(db_task.created_date))),
-                ("updated", str(timezone.localtime(db_task.updated_date))),
-
-                ("labels", [
-                    ("label", OrderedDict([
-                        ("name", db_label.name),
-                        ("attributes", [("attribute", db_attr.text)
-                            for db_attr in db_label.attributespec_set.all()])
-                    ])) for db_label in db_labels
-                ]),
-
-                ("segments", [
-                    ("segment", OrderedDict([
-                        ("id", str(db_segment.id)),
-                        ("start", str(db_segment.start_frame)),
-                        ("stop", str(db_segment.stop_frame)),
-                        ("url", "{0}://{1}/?id={2}".format(
-                            scheme, host, db_segment.job_set.all()[0].id))
-                    ])) for db_segment in db_segments
-                ]),
-
-                ("owner", OrderedDict([
-                    ("username", db_task.owner.username),
-                    ("email", db_task.owner.email)
-                ])),
-            ])),
-            ("dumped", str(timezone.localtime(timezone.now())))
-        ])
-        '''
         annotationjson = {}
         # Placeholders
         annotationjson['info'] = {u'description': u'COCO 2017 Dataset',
@@ -1404,16 +1362,17 @@ class _AnnotationForTask(_Annotation):
                      "left wrist", "right wrist", "left hip", "right hip", "left knee",
                      "right knee", "left ankle", "right ankle", "center"]
 
-        #All of our jobs should just have one segment.
-        # = models.Job.objects.select_for_update().get(segment_id=db_segments[0].id).id
-
-        #
-        satisfactories = pd.read_csv('satisfactory_vids.csv')
-        satisfactories = satisfactories[satisfactories['status'] == '2']
+        # To read csv
+        satisfactories = pd.read_csv('BrickLaying.csv')
+        satisfactories = satisfactories[satisfactories['Labels'] != 'BUGGED']
 
         db_jobs = models.Job.objects.select_for_update().filter(id__in=list(satisfactories['cvatjobid']))
 
-        #db_jobs = models.Job.objects.select_for_update().all()
+        # For debugging locally
+        #satisfactories = {'cvatjobid': 0}
+        #satisfactories['cvatjobid'] = 101
+        #db_jobs = models.Job.objects.select_for_update().filter(id=101)
+
 
         def pair(x, y):
             return ((x + y) * (x + y + 1) / 2) + y
@@ -1435,123 +1394,87 @@ class _AnnotationForTask(_Annotation):
                 def keyporder(elem):
                     return keypointsnames.index(elem.name)
 
-                current_frame = 0
-                current_kf = {}
-                for db_skel in db_skels:
+                attributes = {'LH': '',
+                              'RH': '',
+                              'activity': ''}
 
-                    # Generate using Cantor's pairing function:
-                    # - image id, from job_id and frame. We need both job id and frame later.
-                    # - annot.id, from skeleton ("detection id") and object path ("tracking id").
-                    #   so we can retrieve track id while retaining distinctive id
-                    #   for each annotation object.
+                for sk,db_skel in enumerate(db_skels):
 
-                    image = {'license' : 3,
-                              'file_name' : str(pair(db_job_id,db_skel.frame)),
-                              'coco_url' : '',
-                              'height' : 0,
-                              'width' : 0,
-                              'date_captured' : '',
-                              'flickr_url' : '',
-                              'id' : pair(db_job_id,db_skel.frame)}
+                    keyframe = db_skel.frame
 
-                    if image not in annotationjson['images']:
-                        annotationjson['images'].append(image)
+                    # Keypoints
+                    db_keypoints = models.Keypoint.objects.select_for_update().\
+                                        filter(skeleton_id=db_skel.id)
+                    db_keypoints = sorted(db_keypoints, key=keyporder)
 
-                    # Get keypoint locations for current (key) frame
-                    db_keypoints = models.Keypoint.objects.select_for_update().filter(skeleton_id=db_skel.id)
-                    db_keypoints = sorted(db_keypoints,key=keyporder)
+                    # Only changed attributes associated with keyframe
+                    # Need to record all attribute values for all frames.
+                    db_attributes = models.TrackedSkeletonAttributeVal.objects. \
+                        select_for_update().filter(skeleton_id=db_skel.id)
+                    attrs = {attr.spec.get_attribute()['name']:
+                             attr.value for attr in db_attributes}
+                    for attr, value in attrs.items():
+                        if attributes[attr] != value:
+                            attributes[attr] = value
 
-                    annotations = {'segmentation': [[]],
-                                   'num_keypoints': 13,
-                                   'area': 0,
-                                   'iscrowd': 0,
-                                   'keypoints': [], # Should be of length 39 when created
-                                   'image_id': image['id'],
-                                   'bbox': [],
-                                   'category_id' : 1,
-                                   'id': pair(object_path.id,db_skel.skeleton_ptr.id)}
+                    if sk != len(db_skels) - 1:
+                        next_keyframe = db_skels[sk + 1].frame
+                        frames = range(keyframe,next_keyframe)
 
-                    for keypoint in db_keypoints:
-                        annotations['keypoints'].append(keypoint.x)
-                        annotations['keypoints'].append(keypoint.y)
-                        annotations['keypoints'].append(keypoint.visibility)
+                        new_keypoints = models.Keypoint.objects.select_for_update().\
+                                            filter(skeleton_id=db_skels[sk + 1].id)
+                        new_keypoints = sorted(new_keypoints, key=keyporder)
 
-                    annotationjson['annotations'].append(annotations)
+                        for frame in frames:
 
-            # TODO: need to also generate interpolated keypoint positions.
+                            image = {'license': 3, 'coco_url': '',
+                                     'height': 0, 'width': 0,
+                                     'date_captured': '', 'flickr_url': '',
+                                     'file_name': str(pair(db_job_id, frame)),
+                                     'id': pair(db_job_id, frame)}
 
-            #nm = list(satisfactories[satisfactories['cvatjobid'] == db_job.id]['videoname'])[0]
+                            if image not in annotationjson['images']:
+                                annotationjson['images'].append(image)
 
-        json.dump(annotationjson,open('annotations.json','w'))
+                            annotations = {'segmentation': [[]], 'num_keypoints': 13,
+                                           'area': 0, 'iscrowd': 0, 'keypoints': [],
+                                           'image_id': image['id'], 'bbox': [],
+                                           'category_id': 1, 'id': pair(object_path.id, frame),
+                                           'attributes': attributes.copy()}
 
-        #dump_path = self.db_task.get_dump_path()
+                            for k, keypoint in enumerate(db_keypoints):
+                                local_delta = frame - keyframe
+                                global_delta = next_keyframe - keyframe
+                                relative_offset = local_delta / global_delta
 
-        '''
-        #with open(dump_path, "w") as dump_file:
-            dumper = _XmlAnnotationWriter(dump_file)
-            dumper.open_root()
-            dumper.add_meta(meta)
+                                x = keypoint.x + (new_keypoints[k].x - keypoint.x) * relative_offset
+                                y = keypoint.y + (new_keypoints[k].y - keypoint.y) * relative_offset
+                                visibility = keypoint.visibility
 
-            if self.db_task.mode == "annotation":
-                boxes = {}
-                for box in self.to_boxes():
-                    if box.frame in boxes:
-                        boxes[box.frame].append(box)
-                    else:
-                        boxes[box.frame] = [box]
+                                annotations['keypoints'].append(x)
+                                annotations['keypoints'].append(y)
+                                annotations['keypoints'].append(visibility)
 
-                for frame in sorted(boxes):
-                    link = get_frame_path(self.db_task.id, frame)
-                    path = os.readlink(link)
+                            annotationjson['annotations'].append(annotations)
 
-                    rpath = path.split(os.path.sep)
-                    rpath = os.path.sep.join(rpath[rpath.index(".upload")+1:])
+                    else: # Last keyframe (should be last annotation
 
-                    dumper.open_image(OrderedDict([
-                        ("id", str(frame)),
-                        ("name", rpath)
-                    ]))
-                    for box in boxes[frame]:
-                        dumper.open_box(OrderedDict([
-                            ("label", box.label.name),
-                            ("xtl", "{:.2f}".format(box.xtl)),
-                            ("ytl", "{:.2f}".format(box.ytl)),
-                            ("xbr", "{:.2f}".format(box.xbr)),
-                            ("ybr", "{:.2f}".format(box.ybr)),
-                            ("occluded", str(int(box.occluded)))
-                        ]))
-                        for attr in box.attributes:
-                            dumper.add_attribute(OrderedDict([
-                                ("name", attr.name),
-                                ("value", attr.value)
-                            ]))
-                        dumper.close_box()
-                    dumper.close_image()
-            else:
-                paths = self.to_paths()
-                for idx, path in enumerate(paths):
-                    dumper.open_track(OrderedDict([
-                        ("id", str(idx)),
-                        ("label", path.label.name)
-                    ]))
-                    for box in path.get_interpolated_boxes():
-                        dumper.open_box(OrderedDict([
-                            ("frame", str(box.frame)),
-                            ("xtl", "{:.2f}".format(box.xtl)),
-                            ("ytl", "{:.2f}".format(box.ytl)),
-                            ("xbr", "{:.2f}".format(box.xbr)),
-                            ("ybr", "{:.2f}".format(box.ybr)),
-                            ("outside", str(int(box.outside))),
-                            ("occluded", str(int(box.occluded))),
-                            ("keyframe", str(int(box.keyframe)))
-                        ]))
-                        for attr in path.attributes + box.attributes:
-                            dumper.add_attribute(OrderedDict([
-                                ("name", attr.name),
-                                ("value", attr.value)
-                            ]))
-                        dumper.close_box()
-                    dumper.close_track()
+                        image = {'license': 3, 'coco_url': '',
+                                 'height': 0, 'width': 0,
+                                 'date_captured': '', 'flickr_url': '',
+                                 'file_name': str(pair(db_job_id, keyframe)),
+                                 'id': pair(db_job_id, keyframe)}
 
-            dumper.close_root()
-        '''
+                        annotations = {'segmentation': [[]], 'num_keypoints': 13,
+                                       'area': 0, 'iscrowd': 0, 'keypoints': [],
+                                       'image_id': image['id'], 'bbox': [],
+                                       'category_id': 1, 'id': pair(object_path.id, keyframe),
+                                       'attributes': attributes.copy()}
+
+                        for k, keypoint in enumerate(db_keypoints):
+                            annotations['keypoints'].append(keypoint.x)
+                            annotations['keypoints'].append(keypoint.y)
+                            annotations['keypoints'].append(keypoint.visibility)
+
+                        annotationjson['annotations'].append(annotations)
+        json.dump(annotationjson, open('annotations.json', 'w'))

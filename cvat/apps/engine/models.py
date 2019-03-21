@@ -146,7 +146,6 @@ class AttributeSpec(models.Model):
         attr = self.get_attribute()
         return attr['values']
 
-
     def __str__(self):
         return self.get_attribute()['name']
 

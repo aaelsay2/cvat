@@ -1323,8 +1323,6 @@ class _AnnotationForTask(_Annotation):
                 self.boxes.extend(int_boxes_by_frame[frame])
 
     def dump(self, data_format, db_task, scheme, host):
-        db_segments = db_task.segment_set.all().prefetch_related('job_set')
-        db_labels = db_task.label_set.all().prefetch_related('attributespec_set')
 
         # Note: This code modified to output (JSON) keypoint annotations in
         # Microsoft COCO format. (c.f. http://cocodataset.org/#format-data )
@@ -1366,13 +1364,13 @@ class _AnnotationForTask(_Annotation):
         satisfactories = pd.read_csv('BrickLaying.csv')
         satisfactories = satisfactories[satisfactories['Labels'] != 'BUGGED']
 
-        db_jobs = models.Job.objects.select_for_update().filter(id__in=list(satisfactories['cvatjobid']))
+        db_jobs = models.Job.objects.select_for_update().\
+                    filter(id__in=list(satisfactories['cvatjobid']))
 
         # For debugging locally
         #satisfactories = {'cvatjobid': 0}
         #satisfactories['cvatjobid'] = 101
         #db_jobs = models.Job.objects.select_for_update().filter(id=101)
-
 
         def pair(x, y):
             return ((x + y) * (x + y + 1) / 2) + y
@@ -1449,11 +1447,10 @@ class _AnnotationForTask(_Annotation):
 
                                 x = keypoint.x + (new_keypoints[k].x - keypoint.x) * relative_offset
                                 y = keypoint.y + (new_keypoints[k].y - keypoint.y) * relative_offset
-                                visibility = keypoint.visibility
 
                                 annotations['keypoints'].append(x)
                                 annotations['keypoints'].append(y)
-                                annotations['keypoints'].append(visibility)
+                                annotations['keypoints'].append(keypoint.visibility)
 
                             annotationjson['annotations'].append(annotations)
 
@@ -1464,6 +1461,9 @@ class _AnnotationForTask(_Annotation):
                                  'date_captured': '', 'flickr_url': '',
                                  'file_name': str(pair(db_job_id, keyframe)),
                                  'id': pair(db_job_id, keyframe)}
+
+                        if image not in annotationjson['images']:
+                            annotationjson['images'].append(image)
 
                         annotations = {'segmentation': [[]], 'num_keypoints': 13,
                                        'area': 0, 'iscrowd': 0, 'keypoints': [],

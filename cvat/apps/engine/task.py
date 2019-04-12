@@ -98,13 +98,16 @@ def reverse_annotation(tid):
     db_object_paths = models.ObjectPath.objects.select_for_update().filter(job_id=job_id)
 
     for op in db_object_paths:
-        db_skels = models.TrackedSkeleton.objects.select_for_update().filter(track_id = op.id).order_by('id')
+        db_skels = models.TrackedSkeleton.objects.select_for_update().filter(track_id = op.id).order_by('frame')#.order_by('id')
 
         frames = [skel.frame for skel in db_skels]
 
+        import wdb; wdb.set_trace()
+
         for i in range(len(frames)):
-            db_skels[i].frame = frames[len(frames) - 1 -i]
-            db_skels[i].save()
+            db_skel = db_skels[i]
+            db_skel.frame = frames[len(frames) - 1 -i]
+            db_skel.save()
 
 
 @transaction.atomic

@@ -102,7 +102,7 @@ def reverse_annotation(tid):
 
         frames = [skel.frame for skel in db_skels]
 
-        import wdb; wdb.set_trace()
+        #import wdb; wdb.set_trace()
 
         for i in range(len(frames)):
             db_skel = db_skels[i]

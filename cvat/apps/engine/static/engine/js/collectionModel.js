@@ -185,6 +185,8 @@ class CollectionModel extends Listener {
             
             console.log(track.skeletons);
             
+            track.skeletons.sort(function(a,b){return a.frame > b.frame;});
+            
             for (let skel of track.skeletons) {
                 var keypoints = [];
 

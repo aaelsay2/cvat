@@ -1409,7 +1409,8 @@ class _AnnotationForTask(_Annotation):
                     db_attributes = models.TrackedSkeletonAttributeVal.objects. \
                         select_for_update().filter(skeleton_id=db_skel.id)
                     attrs = {attr.spec.get_attribute()['name']:
-                             attr.value for attr in db_attributes}
+                             attr.value for attr in db_attributes \
+                             if attr.spec.get_attribute()['name'] == 'activity'}
                     for attr, value in attrs.items():
                         if attributes[attr] != value:
                             attributes[attr] = value

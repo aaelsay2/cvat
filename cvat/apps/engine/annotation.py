@@ -1402,7 +1402,7 @@ class _AnnotationForTask(_Annotation):
                     # Keypoints
                     db_keypoints = models.Keypoint.objects.select_for_update().\
                                         filter(skeleton_id=db_skel.id)
-                    db_keypoints = sorted(db_keypoints, key=keyporder)
+                    db_keypoints = list(sorted(db_keypoints, key=keyporder))
 
                     # Only changed attributes associated with keyframe
                     # Need to record all attribute values for all frames.
@@ -1421,7 +1421,7 @@ class _AnnotationForTask(_Annotation):
 
                         new_keypoints = models.Keypoint.objects.select_for_update().\
                                             filter(skeleton_id=db_skels[sk + 1].id)
-                        new_keypoints = sorted(new_keypoints, key=keyporder)
+                        new_keypoints = list(sorted(new_keypoints, key=keyporder))
 
                         for frame in frames:
 

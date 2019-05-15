@@ -1412,7 +1412,7 @@ class _AnnotationForTask(_Annotation):
                              attr.value for attr in db_attributes \
                              if attr.spec.get_attribute()['name'] == 'activity'}
                     
-                    '''
+                    
                     for attr, value in attrs.items():
                         if attributes[attr] != value:
                             attributes[attr] = value
@@ -1477,28 +1477,7 @@ class _AnnotationForTask(_Annotation):
                             annotations['keypoints'].append(keypoint.x)
                             annotations['keypoints'].append(keypoint.y)
                             annotations['keypoints'].append(keypoint.visibility)
-                    '''
-                    
-                    image = {'license': 3, 'coco_url': '',
-                        'height': 0, 'width': 0,
-                        'date_captured': '', 'flickr_url': '',
-                        'file_name': str(pair(db_job_id, keyframe)),
-                        'id': pair(db_job_id, keyframe)}
-
-                    if image not in annotationjson['images']:
-                        annotationjson['images'].append(image)
-
-                    annotations = {'segmentation': [[]], 'num_keypoints': 13,
-                                   'area': 0, 'iscrowd': 0, 'keypoints': [],
-                                   'image_id': image['id'], 'bbox': [],
-                                   'category_id': 1, 'id': pair(object_path.id, keyframe),
-                                   'attributes': attrs.copy()}
-
-                    for k, keypoint in enumerate(db_keypoints):
-                        annotations['keypoints'].append(keypoint.x)
-                        annotations['keypoints'].append(keypoint.y)
-                        annotations['keypoints'].append(keypoint.visibility)
                     
                     
-                    annotationjson['annotations'].append(annotations)
+                        annotationjson['annotations'].append(annotations)
         json.dump(annotationjson, open('annotations.json', 'w'))

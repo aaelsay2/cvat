@@ -277,7 +277,8 @@ class _FrameExtractor:
         translated_quality = round((((translated_quality - 1) * (31 - 2)) / (95 - 1)) + 2)
         self.output = tempfile.mkdtemp(prefix='cvat-', suffix='.data')
         target_path = os.path.join(self.output, '%d.jpg')
-        output_opts = '-start_number 0 -vf  "select=not(mod(n\,2))" -b:v 10000k   -vsync 0 -an -y -q:v  ' + '2'#str(translated_quality)
+        output_opts = '-start_number 0 -b:v 10000k   -vsync 0 -an -y -q:v  ' + '2'#str(translated_quality)
+        # -vf  "select=not(mod(n\,2))" to downsample by factor of 2
         if flip_flag:
             output_opts += ' -vf "transpose=2,transpose=2"'
         ff = FFmpeg(

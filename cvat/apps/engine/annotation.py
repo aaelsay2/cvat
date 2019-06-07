@@ -1361,7 +1361,7 @@ class _AnnotationForTask(_Annotation):
                      "right knee", "left ankle", "right ankle", "center"]
 
         # To read csv
-        satisfactories = pd.read_csv('AllAnnotateds.csv')
+        satisfactories = pd.read_csv('YoutubeBL.csv')
 
         db_jobs = models.Job.objects.select_for_update().\
                     filter(id__in=list(satisfactories['cvatjobid']))
